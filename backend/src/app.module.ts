@@ -19,17 +19,21 @@ import { Item } from './items/item.entity';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get<string>('DB_HOST', 'localhost'),
-        port: configService.get<number>('DB_PORT', 5432),
-        username: configService.get<string>('DB_USERNAME', 'postgres'),
-        password: configService.get<string>('DB_PASSWORD', 'postgres'),
-        database: configService.get<string>('DB_DATABASE', 'securedrop'),
-        entities: [User, Item],
-        synchronize: configService.get<boolean>('DB_SYNCHRONIZE', true),
-        logging: false,
-      }),
+      useFactory: (configService: ConfigService) => {
+        const useSsl = configService.get<string>('DB_SSL') === 'true';
+        return {
+          type: 'postgres',
+          host: configService.get<string>('DB_HOST', 'localhost'),
+          port: configService.get<number>('DB_PORT', 5432),
+          username: configService.get<string>('DB_USERNAME', 'postgres'),
+          password: configService.get<string>('DB_PASSWORD', 'postgres'),
+          database: configService.get<string>('DB_DATABASE', 'securedrop'),
+          entities: [User, Item],
+          synchronize: configService.get<boolean>('DB_SYNCHRONIZE', true),
+          ssl: useSsl ? { rejectUnauthorized: false } : false,
+          logging: false,
+        };
+      },
     }),
     UsersModule,
     AuthModule,
