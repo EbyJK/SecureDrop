@@ -189,3 +189,8 @@ The React web dashboard will be available at `http://localhost:3000`.
 
 ## 📜 License
 MIT License. Built for educational and resume demonstration purposes.
+
+
+backend:  https://securedrop-backend-188c.onrender.com/
+
+database: supabase
