@@ -20,7 +20,22 @@ import { Item } from './items/item.entity';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const useSsl = configService.get<string>('DB_SSL') === 'true';
+        const dbUrl = configService.get<string>('DATABASE_URL');
+        const useSsl = configService.get<string>('DB_SSL') === 'true' || !!dbUrl;
+
+        if (dbUrl) {
+          // Single Connection String Mode (e.g. Supabase DATABASE_URL)
+          return {
+            type: 'postgres',
+            url: dbUrl,
+            entities: [User, Item],
+            synchronize: configService.get<boolean>('DB_SYNCHRONIZE', true),
+            ssl: { rejectUnauthorized: false },
+            logging: false,
+          };
+        }
+
+        // Individual Credentials Mode
         return {
           type: 'postgres',
           host: configService.get<string>('DB_HOST', 'localhost'),
