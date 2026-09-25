@@ -20,7 +20,7 @@ export class TelegramService implements OnModuleInit {
     private readonly filesService: FilesService,
   ) {}
 
-  onModuleInit() {
+  async onModuleInit() {
     const token = this.configService.get<string>('TELEGRAM_BOT_TOKEN');
     if (!token || token === 'your_telegram_bot_token_here') {
       this.logger.warn(
@@ -32,14 +32,41 @@ export class TelegramService implements OnModuleInit {
     try {
       this.bot = new TelegramBot(token, { polling: true });
       this.registerHandlers();
+
+      // Register interactive command menu in Telegram UI
+      await this.setBotCommandMenu();
+
       this.logger.log('Telegram Bot successfully initialized and polling for updates!');
     } catch (err) {
       this.logger.error('Failed to initialize Telegram Bot:', err);
     }
   }
 
+  private async setBotCommandMenu() {
+    if (!this.bot) return;
+
+    try {
+      await this.bot.setMyCommands([
+        { command: 'start', description: '🚀 Link account or view status' },
+        { command: 'save', description: '📝 Save note/link (e.g. /save Note --expires 2h)' },
+        { command: 'list', description: '📋 List your recent saved items' },
+        { command: 'search', description: '🔍 Search saved content' },
+        { command: 'delete', description: '🗑️ Delete item by ID' },
+        { command: 'help', description: '🛠️ View command guide & tips' },
+      ]);
+      this.logger.log('Telegram Bot command menu set successfully.');
+    } catch (err) {
+      this.logger.warn('Failed to set Telegram Bot command menu:', err);
+    }
+  }
+
   private registerHandlers() {
     if (!this.bot) return;
+
+    // Handle temporary network socket resets gracefully
+    this.bot.on('polling_error', (error) => {
+      this.logger.warn(`Telegram Polling Notice: ${error.message || error}`);
+    });
 
     // Handle /start command
     this.bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
